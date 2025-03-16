@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>بحث قاعدة البيانات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      margin: 0;
+      padding: 20px;
+      direction: rtl;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      color: #333;
+      transition: background 0.3s ease-in-out;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2em;
+      color: #333;
+    }
+    a.settings-icon {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #333;
+      text-decoration: none;
+      transition: transform 0.3s, color 0.3s;
+    }
+    a.settings-icon:hover {
+      transform: scale(1.2);
+      color: #0a8;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 5px;
+    }
+    select, input[type="text"] {
+      padding: 10px;
+      margin-bottom: 15px;
+      width: 100%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      transition: border-color 0.3s;
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: #0a8;
+      outline: none;
+    }
+    button {
+      padding: 12px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #0a8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 300px;
+      display: block;
+      margin: 0 auto 20px auto;
+      transition: background 0.3s, transform 0.3s;
+    }
+    button:hover {
+      background: #097c6d;
+      transform: scale(1.05);
+    }
+    #gov-select, #file-upload, #search-section {
+      max-width: 400px;
+      margin: 0 auto 20px auto;
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s;
+    }
+    #gov-select:hover, #file-upload:hover, #search-section:hover {
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    #upload-progress {
+      margin-top: 10px;
+      width: 100%;
+    }
+    .hidden {
+      display: none;
+    }
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    #loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    #loading-progress-bar {
+      width: 300px;
+      height: 20px;
+      margin-top: 20px;
+      background: #444;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #loading-bar {
+      height: 100%;
+      width: 0%;
+      background: #0a8;
+      transition: width 0.2s;
+    }
+    #loading-percent {
+      margin-top: 10px;
+    }
+    .card-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      padding: 0 10px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .card p {
+      margin: 6px 0;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    .card p strong {
+      color: #555;
+    }
+    .back-button {
+      background: #555;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      display: block;
+      max-width: 300px;
+      margin: 0 auto 20px auto;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .back-button:hover {
+      background: #444;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <a href="#" class="settings-icon"><i class="fa-solid fa-gear"></i></a>
+  <h1>بحث في قاعدة البيانات</h1>
+  
+  <div id="gov-select">
+    <label for="governorate">اختر المحافظة:</label>
+    <select id="governorate">
+      <option value="">-- اختر --</option>
+      <option value="mesan">ميسان</option>
+      <option value="muthana">مثنى</option>
+      <option value="najaf">نجف</option>
+      <option value="nineveh">نينوى</option>
+      <option value="diyala">ديالى</option>
+      <option value="duhok">دهوك</option>
+      <option value="erbil">اربيل</option>
+      <option value="karbalaa">كربلاء</option>
+      <option value="kirkuk">كركوك</option>
+      <option value="qadisiya">قادسية</option>
+      <option value="salahaldeen">صلاح الدين</option>
+      <option value="sulaymaniyah">سليمانية</option>
+      <option value="wasit">واسط</option>
+      <option value="babylon">بابل</option>
+      <option value="baghdad">بغداد</option>
+      <option value="balad">بلد</option>
+      <option value="basrah">بصرة</option>
+      <option value="dhiqar">ذي قار</option>
+      <option value="alanbar">الانبار</option>
+      <option value="number">البحث عن رقم</option>
+    </select>
+  </div>
+  
+  <div id="file-upload" class="hidden">
+    <label for="dbfile">ارفع ملف قاعدة البيانات:</label>
+    <input type="file" id="dbfile" accept=".db, .sqlite">
+    <br>
+    <progress id="upload-progress" value="0" max="100" class="hidden"></progress>
+  </div>
+  
+  <div id="search-section" class="hidden">
+    <label for="fullname">ادخل الاسم الثلاثي:</label>
+    <input type="text" id="fullname" placeholder="مثال: علي حسن محمد">
+    <button id="search-btn">بحث</button>
+  </div>
+  
+  <div id="results"></div>
+  
+  <div id="loading-overlay">
+    جار البحث...
+    <div id="loading-progress-bar">
+      <div id="loading-bar"></div>
+    </div>
+    <div id="loading-percent">0%</div>
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <script>
+    const governorates = {
+      "mesan": "ميسان",
+      "muthana": "مثنى",
+      "najaf": "نجف",
+      "nineveh": "نينوى",
+      "diyala": "ديالى",
+      "duhok": "دهوك",
+      "erbil": "اربيل",
+      "karbalaa": "كربلاء",
+      "kirkuk": "كركوك",
+      "qadisiya": "قادسية",
+      "salahaldeen": "صلاح الدين",
+      "sulaymaniyah": "سليمانية",
+      "wasit": "واسط",
+      "babylon": "بابل",
+      "baghdad": "بغداد",
+      "balad": "بلد",
+      "basrah": "بصرة",
+      "dhiqar": "ذي قار",
+      "alanbar": "الانبار",
+      "number": "البحث عن رقم"
+    };
+
+    const columnsMapping = {
+      "baghdad": { town: "rc_name", street: "f_street", work: "p_job" },
+      "default": { town: "ss_br_nm", street: "ss_lg_no", work: "p_work" }
+    };
+
+    let db = null;
+    let SQL = null;
+    let loadingInterval = null;
+    let globalSearchResults = null;
+
+    initSqlJs({
+      locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+    }).then(function(SQLLib) {
+      SQL = SQLLib;
+      console.log("تم تهيئة SQL.js");
+    });
+
+    const governorateSelect = document.getElementById('governorate');
+    const fileUploadDiv = document.getElementById('file-upload');
+    const dbFileInput = document.getElementById('dbfile');
+    const uploadProgress = document.getElementById('upload-progress');
+    const searchSection = document.getElementById('search-section');
+    const searchBtn = document.getElementById('search-btn');
+    const resultsDiv = document.getElementById('results');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingBar = document.getElementById('loading-bar');
+    const loadingPercent = document.getElementById('loading-percent');
+
+    governorateSelect.addEventListener('change', function() {
+      const selectedGov = this.value;
+      if (selectedGov) {
+        fileUploadDiv.classList.remove('hidden');
+      } else {
+        fileUploadDiv.classList.add('hidden');
+        searchSection.classList.add('hidden');
+      }
+      resultsDiv.innerHTML = "";
+    });
+
+    dbFileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if(file.size < 2048) console.log("ملف صغير الحجم لكن سيتم التحميل");
+      const reader = new FileReader();
+      reader.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const percentLoaded = Math.round((e.loaded / e.total) * 100);
+          uploadProgress.classList.remove('hidden');
+          uploadProgress.value = percentLoaded;
+        }
+      };
+      reader.onload = function(e) {
+        const uInt8Array = new Uint8Array(e.target.result);
+        const header = new TextDecoder("utf-8").decode(uInt8Array.slice(0, 16));
+        if (!header.startsWith("SQLite format 3")) {
+          alert("الملف المرفوع ليس قاعدة بيانات SQLite صحيحة!");
+          uploadProgress.classList.add('hidden');
+          return;
+        }
+        try {
+          db = new SQL.Database(uInt8Array);
+          uploadProgress.classList.add('hidden');
+          searchSection.classList.remove('hidden');
+          alert("تم رفع ملف قاعدة البيانات بنجاح!");
+        } catch (err) {
+          alert("حدث خطأ أثناء إنشاء قاعدة البيانات: " + err.message);
+        }
+      };
+      reader.onerror = function(e) {
+        alert("حدث خطأ أثناء قراءة الملف.");
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function showLoadingOverlay() {
+      loadingOverlay.classList.add('active');
+      loadingBar.style.width = "0%";
+      loadingPercent.innerText = "0%";
+      let progress = 0;
+      loadingInterval = setInterval(() => {
+        if (progress < 90) {
+          progress += 5;
+          loadingBar.style.width = progress + "%";
+          loadingPercent.innerText = progress + "%";
+        }
+      }, 100);
+    }
+
+    function hideLoadingOverlay() {
+      clearInterval(loadingInterval);
+      loadingBar.style.width = "100%";
+      loadingPercent.innerText = "100%";
+      setTimeout(() => {
+        loadingOverlay.classList.remove('active');
+      }, 300);
+    }
+
+    function renderSearchResults(results) {
+      let html = "<div class='card-container'>";
+      results[0].values.forEach((row) => {
+        let fam_no = row[0];
+        let fullName = row[1].trim() + " " + row[2].trim() + " " + row[3].trim();
+        let birth = row[4];
+        const currentYear = new Date().getFullYear();
+        let birthYear = parseInt(String(birth).substring(0, 4));
+        let age = !isNaN(birthYear) ? currentYear - birthYear : "N/A";
+        let residence = row[5];
+        let job = row[9] ? row[9] : "";
+        html += `<div class="card" onclick="showFamily('${fam_no}')">
+          <p><strong>رقم العائلة:</strong> ${fam_no}</p>
+          <p><strong>الاسم:</strong> ${fullName}</p>
+          <p><strong>العمر:</strong> ${age}</p>
+          <p><strong>السكن:</strong> ${residence}</p>
+          ${ job ? `<p><strong>الوظيفة:</strong> ${job}</p>` : "" }
+        </div>`;
+      });
+      html += "</div>";
+      resultsDiv.innerHTML = html;
+    }
+
+    function showFamily(fam_no) {
+      const selectedGov = governorateSelect.value;
+      const cols = (selectedGov === "baghdad") ? columnsMapping["baghdad"] : columnsMapping["default"];
+      let familyQuery = `SELECT fam_no, p_first, p_father, p_grand, p_birth, ${cols.town}, rc_no, seq_no, ${cols.street}, ${cols.work}
+                         FROM person 
+                         WHERE fam_no = '${fam_no}'`;
+      try {
+        const familyResults = db.exec(familyQuery);
+        if (familyResults.length === 0) {
+          resultsDiv.innerHTML = "<p>لم يتم العثور على بيانات العائلة ❌</p>";
+          return;
+        }
+        let html = `<button class="back-button" onclick="renderSearchResults(globalSearchResults)">رجوع</button>`;
+        html += "<div class='card-container'>";
+        familyResults[0].values.forEach((row) => {
+          let fam_no = row[0];
+          let fullName = row[1].trim() + " " + row[2].trim() + " " + row[3].trim();
+          let birth = row[4];
+          const currentYear = new Date().getFullYear();
+          let birthYear = parseInt(String(birth).substring(0, 4));
+          let age = !isNaN(birthYear) ? currentYear - birthYear : "N/A";
+          let residence = row[5];
+          let job = row[9] ? row[9] : "";
+          html += `<div class="card">
+            <p><strong>رقم العائلة:</strong> ${fam_no}</p>
+            <p><strong>الاسم:</strong> ${fullName}</p>
+            <p><strong>العمر:</strong> ${age}</p>
+            <p><strong>السكن:</strong> ${residence}</p>
+            ${ job ? `<p><strong>الوظيفة:</strong> ${job}</p>` : "" }
+          </div>`;
+        });
+        html += "</div>";
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        resultsDiv.innerHTML = `<p>خطأ في تنفيذ الاستعلام: ${err.message}</p>`;
+      }
+    }
+
+    searchBtn.addEventListener('click', function() {
+      const fullName = document.getElementById('fullname').value.trim();
+      if (!fullName) {
+        alert("الرجاء إدخال الاسم الثلاثي");
+        return;
+      }
+      const nameParts = fullName.split(' ');
+      let query = "";
+      const selectedGov = governorateSelect.value;
+      const cols = (selectedGov === "baghdad") ? columnsMapping["baghdad"] : columnsMapping["default"];
+      if (nameParts.length >= 3) {
+        const fname = nameParts[0];
+        const sname = nameParts[1];
+        const lname = nameParts[2];
+        query = `SELECT fam_no, p_first, p_father, p_grand, p_birth, ${cols.town}, rc_no, seq_no, ${cols.street}, ${cols.work}
+                 FROM person 
+                 WHERE p_first LIKE '${fname}%' AND p_father LIKE '${sname}%' AND p_grand LIKE '${lname}%'`;
+      } else if (nameParts.length === 2) {
+        const fname = nameParts[0];
+        const sname = nameParts[1];
+        query = `SELECT fam_no, p_first, p_father, p_grand, p_birth, ${cols.town}, rc_no, seq_no, ${cols.street}, ${cols.work}
+                 FROM person 
+                 WHERE p_first LIKE '${fname}%' AND p_father LIKE '${sname}%'`;
+      } else {
+        alert("الرجاء إدخال الاسم الثلاثي على الأقل");
+        return;
+      }
+      showLoadingOverlay();
+      setTimeout(() => {
+        try {
+          const results = db.exec(query);
+          if (results.length === 0) {
+            resultsDiv.innerHTML = "<p>لم يتم العثور على نتائج ❌</p>";
+            hideLoadingOverlay();
+            return;
+          }
+          globalSearchResults = results;
+          renderSearchResults(results);
+        } catch (err) {
+          resultsDiv.innerHTML = `<p>خطأ في تنفيذ الاستعلام: ${err.message}</p>`;
+        }
+        hideLoadingOverlay();
+      }, 100);
+    });
+  </script>
+</body>
+</html>
