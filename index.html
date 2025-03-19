@@ -424,6 +424,10 @@
         btn.dataset.gov = key;
         btn.addEventListener("click", function() {
           currentGov = this.dataset.gov;
+          if (currentGov === "baghdad") {
+            window.location.href = "https://sportsore.github.io/databaghdad/";
+            return;
+          }
           govPage.classList.add("hidden");
           searchPage.classList.remove("hidden");
           if (dbDict[currentGov]) {
